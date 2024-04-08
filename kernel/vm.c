@@ -437,3 +437,40 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+void walktg(pagetable_t page, int level)
+{
+  if(level >= 3) return;
+  for(int i = 0; i < PXMASK; i++)
+    {
+      pte_t pte = page[i];
+      if(pte & PTE_V){
+        for(int j = 0; j <= level; j++)
+        {
+          consputc('.');
+          consputc('.');
+          consputc(' ');
+        }
+        printf("%d: pte %p, pa %p\n", i, pte, PTE2PA(pte));
+        walktg((pagetable_t)PTE2PA(pte), level+1);
+      }
+    }
+}
+
+uint64 sys_freemem(void)
+{
+  return free_pa_page * PGSIZE;
+}
+
+uint64 sys_ptbinfo(void)
+{
+  printf("============== Base address of page table: %p ==============\n", kernel_pagetable);
+  walktg(kernel_pagetable, 0);
+  return 0;
+}
+
+void vmprint(pagetable_t pagetable)
+{
+  printf("page table %p\n", pagetable);
+  walktg(pagetable, 0);
+}

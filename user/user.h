@@ -22,6 +22,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int freemem(void);
+int trace(int);
+int ptbinfo(void);
+int pgaccess(char*, int, uint32*);
 
 // ulib.c
 int stat(const char*, struct stat*);

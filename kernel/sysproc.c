@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "syscall.h"
 
 uint64
 sys_exit(void)
@@ -88,4 +89,39 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_trace(void)
+{
+  int mask;
+  argint(0, &mask);
+  if(mask < 0) {
+    return -1;
+  }
+  myproc()->mask = mask;
+  return 0;
+}
+
+uint64 sys_pgaccess(void)
+{
+  uint64 va;
+  int num;
+  uint64 result;
+  argaddr(0, &va);
+  argint(1, &num);
+  argaddr(2, &result);
+  struct proc* p = myproc();
+  if (p == 0) return 1;
+  int ans = 0;
+  pagetable_t pgtbl = p->pagetable;
+  for(int idx = 0; idx < num; idx++)
+  {
+    pte_t *pte = walk(pgtbl, va+(uint64)(idx*PGSIZE), 0);
+    if(pte != 0 && *pte & PTE_A){
+      ans |= (1 << idx);
+      *pte ^= PTE_A;
+    }
+  }
+  return copyout(pgtbl, result, (char *)&ans, sizeof(int));
 }
